@@ -308,4 +308,4 @@
 
 
 
-;; something wrong with specs and the recursive flashing
+;; needs a lot of refactoring, specially around the multiple ways of iterating the map, should probably test it out to see which is better
