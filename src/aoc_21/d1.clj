@@ -10,12 +10,12 @@
   []
   (let [str-depths (b/get-split-input 1)
         xf-parse (map b/parse-int)
-        xf-filter-increasing-pairs (comp (b/xf-partition 2)
+        xf-filter-increasing-pairs (comp (b/get-xf-partition 2)
                                          (filter #(apply < %)))
         xf-res1 (comp xf-parse
                       xf-filter-increasing-pairs)
         xf-res2 (comp xf-parse
-                      (b/xf-partition 3)
+                      (b/get-xf-partition 3)
                       (map #(apply + %))
                       xf-filter-increasing-pairs)
         res1 (transduce xf-res1 rf-count str-depths)

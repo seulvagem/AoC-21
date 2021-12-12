@@ -2,7 +2,10 @@
   (:gen-class)
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
-            [clj-queue.core :as q]))
+            [clj-queue.core :as q]
+            [clojure.set :as set]
+            [clojure.spec.alpha :as s]
+            [clojure.spec.gen.alpha :as gen]))
 
 (defn get-input
   "slurps the input from the corresponding day"
@@ -59,10 +62,10 @@
       (pop nq)
       nq)))
 
-(defn xf-partition
+(defn get-xf-partition
   "like partition, but as a transducer. step defaults to 1"
   ([length]
-   (xf-partition length 1))
+   (get-xf-partition length 1))
   ([length step]
    (fn [rf]
      (let [vseg (volatile! (q/ueue))
@@ -81,7 +84,7 @@
 (defn updates
   "updates an associative or indexed coll with several key - fn pairs"
   [m & kfs]
-  (transduce (xf-partition 2 2)
+  (transduce (get-xf-partition 2 2)
               (fn ([m] m) 
                 ([m [k f]]
                    (update m k f))) m kfs))
@@ -169,3 +172,69 @@
         [(inc x) y]
         [x (inc y)]
         [(dec x) y]))
+
+(defn parse-grid-str->matrix
+  ([string]
+   (parse-grid-str->matrix string identity))
+  ([f string]
+   (let [lines (str/split-lines string)]
+     (into [] (map #(mapv f %)) lines))))
+
+(defn parse-grid-str->map
+  ([string]
+   (parse-grid-str->map identity {} string))
+  ([f string]
+   (parse-grid-str->map f {} string))
+  ([f m string]
+   (let [lines (str/split-lines string)
+         height (count lines)
+         length (count (first lines))
+         coords (for [y (range height)
+                      x (range length)]
+                  [x y])
+         get-val #(f (get-in lines (reverse %)))]
+     (transduce (map (juxt identity get-val)) conj m coords))))
+
+
+;; combinations
+
+(defn- combinations-of-1
+  "kinda stupid, but it keeps combinate DRY!"
+  [coll]
+  (map hash-set coll))
+
+(defn- combinate
+  [f]
+  (fn [coll]
+    (loop [acc #{}
+           seq1 (seq coll)]
+      (let [x (first seq1)
+            seq2 (next seq1)]
+        (if-not seq2
+          acc
+          (let [xf (map #(conj % x))
+                nacc (into acc xf (f seq2))]
+            (recur nacc seq2)))))))
+
+(defn- get-combination-fn
+  [n]
+  (nth (iterate combinate combinations-of-1) (dec n)))
+
+(defn combinations-of
+  [n coll]
+  (let [c-fn (get-combination-fn n)]
+    (c-fn coll)))
+
+(defn combinations-up-to
+  [n coll]
+  (let [xf-combs-of (map #(combinations-of % coll))]
+    (transduce xf-combs-of set/union (range 1 (inc n)))))
+
+(defn all-combinations
+  [coll]
+  (combinations-up-to (dec (count coll)) coll))
+
+(defn comp-rev
+  "comps the reverse of fns, should not be used in any kind of partial application context"
+  [& fns]
+  (comp (reverse fns)))

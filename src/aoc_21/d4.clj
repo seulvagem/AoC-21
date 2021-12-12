@@ -41,7 +41,6 @@
   :args (s/cat :board ::board
                :n ::n)
   :ret ::marked-board)
-
 (defn mark-board
   [board n]
   (let [coord-range (range (count board))
@@ -59,7 +58,6 @@
 (s/fdef get-row&column
   :args (s/cat :coord ::coord)
   :ret (s/tuple ::coords ::coords))
-
 (defn get-row&column
   [[y x]]
   (let [row (map vector (repeat board-size y) (range board-size))
@@ -70,7 +68,6 @@
 (s/fdef bingo-line?
   :args (s/cat :line ::board-line)
   :ret boolean?)
-
 (defn bingo-line?
   [line]
   (every? nil? line))
@@ -78,24 +75,19 @@
 (s/fdef bingo?
   :args (s/cat :marked-board ::marked-board)
   :ret boolean?)
-
 (defn bingo?
   [{:keys [board marks]}]
   (let [get-in-board (partial get-in board)
         coords->cells #(mapv get-in-board %)
         xf (comp (mapcat get-row&column)
                  (map coords->cells)
-                  ;;  (map #(do (println %) %))
                  (filter bingo-line?))]
-    (transduce xf (b/rf-first boolean) false marks)
-      ;; (into [] xf marks)
-    ))
+    (transduce xf (b/rf-first boolean) false marks)))
 
 (s/fdef get-score
   :args (s/cat :board ::board
                :n ::n)
   :ret ::score)
-
 (defn get-score
   [board n]
   (let [xf (comp cat
@@ -103,26 +95,12 @@
                  (map b/parse-int))]
     (transduce xf (completing + #(* % (b/parse-int n))) board)))
 
-;; (defn rf-check-bingo
-;;   ([])
-;;   ([acc])
-;;   ([acc {:keys [found-coords board], :as marked-board}]
-;;    (reduce (fn [_ coord]
-;;              (let [[row column] (mapv (fn [coords]
-;;                                       (map #(get-in board %) coords))
-;;                                     (get-row&column coord))]
-;;                (when (not (and (some some? row)
-;;                                (some some? column)))
-;;                  (reduced ))))
-;;            nil
-;;            coords)))
 
 (s/fdef bingo-round
   :args (s/cat :boards ::boards
                :n ::n)
   :ret (s/or :boards ::boards
              :score ::score))
-
 (defn bingo-round
   [boards n]
   (transduce (map #(mark-board % n))
@@ -137,21 +115,15 @@
                :n ::n)
   :ret (s/or :boards ::boards
              :score ::score))
-
 (defn bingo-round2
   [boards n]
   (transduce (map #(mark-board % n))
-             
              (fn ([boards {:keys [board], :as marked-board}]
                   (if (bingo? marked-board)
                     (conj boards (get-score board n))
-                            ;;  (reduced (ensure-reduced (get-score board n)))
-                    ;; boards
                     (conj boards board)))
                ([boards]
                 (let [remaining-boards (filter coll? boards)]
-                  ;; (println (count remaining-boards)
-                  ;;          boards)
                   (if (empty? remaining-boards)
                     (ensure-reduced (last boards))
                     remaining-boards))))
@@ -161,21 +133,13 @@
   :args (s/cat :ns ::ns
                :boards ::boards)
   :ret ::score)
-
 (defn bingo1
   [ns boards]
   (reduce (completing bingo-round) boards ns))
 
 (defn bingo2
   [ns boards]
-  (reduce (completing bingo-round2) 
-  ;;  (fn [boards n]
-  ;;           ;; (println (count boards) n)
-  ;;           (let [n-boards (bingo-round2 boards n)]
-  ;;             (if (empty? n-boards)
-  ;;               (reduced (get-score (last boards) n))
-  ;;               n-boards)))
-          boards ns))
+  (reduce (completing bingo-round2) boards ns))
 
 (defn parse-boards
   [str-boards]
@@ -183,6 +147,7 @@
         (comp (map str/split-lines)
               (map (partial mapv #(vec (re-seq #"\d+" %)))))
         str-boards))
+
 
 (defn main
   [input]
@@ -197,4 +162,3 @@
 (defn -main
   []
   (main (b/get-input 4)))
-
