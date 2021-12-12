@@ -29,10 +29,6 @@
 (s/def ::octopus nat-int?)
 (s/def ::energy-level nat-int?)
 
-
-
-
-
 ;; You can model the energy levels and flashes of light in steps. During a single step, the following occurs:
 
 (s/def ::coord (s/tuple int? int?))
@@ -44,7 +40,6 @@
 
 ;; sorted by y then x, both ascendi
 (def initial-octopi (sorted-map-by (fn [a b]
-                                    ;;  (println "sorted a:" a "b:" b)
                                      (let [[ax ay] a
                                            [bx by] b]
                                        (or (< ay by)
@@ -67,19 +62,11 @@
   "octopi must be built upon initial-octopi (or using the same sort fn) or order might be broken"
   [octopi]
   (println octopi)
-  (let [xf (comp
-            ;; b/xf-println
-            (map #(update % 0 second)) ;; coord->y
-                ;;  b/xf-println
-            (partition-by first) ;; group by y
-                ;;  b/xf-println
-            (map #(eduction (map second) %))
-                ;;  b/xf-println
-            (map str/join)
-                ;;  b/xf-println
-            (interpose "\n")
-                ;;  b/xf-println
-            )]
+  (let [xf (comp (map #(update % 0 second)) ;; coord->y
+                 (partition-by first) ;; group by y
+                 (map #(eduction (map second) %))
+                 (map str/join)
+                 (interpose "\n"))]
     (transduce xf str (seq octopi))))
 
 (s/def ::octopi-state
@@ -226,19 +213,15 @@
    :flashed #{}})
 
 (defn rf-energy-increase
-  ;; ([] {:flashing #{}, :octopi initial-octopi})
   ([state] state)
   ([state [coord energy-level]]
-  ;;  (println "oi")
    (let [res (assoc-in state [:octopi coord] energy-level)]
-    ;;  (println "res" res)
      (if (flashing? energy-level)
        (update res :flashing conj coord)
        res))))
 
 (defn octopi-energy-increase
-  ([{:keys [octopi] :as state}]
-  ;;  (println "octopi" octopi)
+  ([{:keys [octopi]}]
    (transduce (map #(update % 1 inc)) rf-energy-increase (assoc initial-octopi-state :octopi octopi) octopi)))
 
 (s/fdef selected-octopi-energy-increase
@@ -246,12 +229,10 @@
 
 (defn selected-octopi-energy-increase
   [octopi-state coords]
-  ;; (println "selected" octopi-state coords)
   (let [octopi (:octopi octopi-state)
         octopi-entries (sequence (comp (map (juxt identity octopi))
                                        (filter (fn [[_ v]] v)))
                                  coords)]
-    ;;  (println "oi")
     (transduce (map #(update % 1 inc))
                (completing rf-energy-increase
                            #(update % :octopi
@@ -271,28 +252,15 @@
     [x y]))
 
 (defn- rf-flash-octopi-map
-  [{:keys [flashed octopi flashing] :as octopi-state}
+  [{:keys [flashed flashing] :as octopi-state}
    flashing-coord]
-  ;; (println "rf-flash" flashing-coord)
   (let [adjacent (into #{} (get-adjacent-coords flashing-coord))
         flash-impact-coords (set/difference adjacent flashing flashed #{flashing-coord})
         res (selected-octopi-energy-increase octopi-state flash-impact-coords)
         {n-octopi :octopi, n-flashing :flashing} res]
-    ;; (println "adjacent: " adjacent "\nimpact:" flash-impact-coords "\nres" res)
-    ;; (println "ola")
-    ;; (println "new flashing: " n-flashing)
     {:flashed (into flashed (conj n-flashing flashing-coord))
      :flashing n-flashing
      :octopi n-octopi}))
-
-;; (defn recursive-flash-octopi-map
-;;   ([{:keys [flashed flashing],, :as octopi-state}]
-;;    (let [initial-state (assoc octopi-state :flashing #{}, :flashed flashed)
-;;          res (reduce rf-flash-octopi-map
-;;                      initial-state flashing)]
-;;      (if (empty? (:flashing res))
-;;        res
-;;        (recur res)))))
 
 (defn octopi-flash
   ([{:keys [flashing],, :as octopi-state}]
