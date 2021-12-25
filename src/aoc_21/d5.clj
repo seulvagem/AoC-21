@@ -80,7 +80,7 @@
         base-point {fix-axis fix-val}]
     (map #(assoc base-point ranged-axis %) (range start (inc end)))))
 
-(defn explode-diagonal ;;not working
+(defn explode-diagonal 
   [[{xa :x ya :y} {xb :x yb :y} :as line]]
   (let [greater->step {true -1
                        false 1}

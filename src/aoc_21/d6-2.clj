@@ -6,11 +6,6 @@
             [clojure.spec.test.alpha :as stest]
             [medley.core :as m]))
 
-(defn rf-ages->map
-  ([] {})
-  ([m] m)
-  ([m n] (update m n (fnil inc 0))))
-
 (def after-hatching-reset-age 6)
 
 (def hatchling-age 8)
@@ -44,8 +39,6 @@
         days (iterate day initial-state)
         resulting-fish-map (nth days day-n)
         fish-count (count-fish resulting-fish-map)]
-    ;; (println resulting-fish-map)
-    ;; (println take 10 days)
     fish-count))
 
 (def day-to-simulate-1 80)

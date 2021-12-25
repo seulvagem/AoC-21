@@ -9,7 +9,7 @@
 
 (def n-set (into #{} (map str) (range 100)))
 (s/def ::n n-set)
-
+ 
 (s/def ::ns (s/with-gen (s/every ::n :distinct true)
               #(gen/shuffle n-set)))
 
@@ -72,7 +72,7 @@
   [line]
   (every? nil? line))
 
-(s/fdef bingo?
+(s/fdef bingo? ;; doesn't need the board at all, only the marks
   :args (s/cat :marked-board ::marked-board)
   :ret boolean?)
 (defn bingo?
@@ -106,7 +106,7 @@
   (transduce (map #(mark-board % n))
              (completing (fn [boards {:keys [board], :as marked-board}]
                            (if (bingo? marked-board)
-                             (reduced (ensure-reduced (get-score board n)))
+                             (reduced (reduced (get-score board n)))
                              (conj boards board))))
              [] boards))
 
